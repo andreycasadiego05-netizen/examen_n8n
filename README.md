@@ -110,3 +110,41 @@ Cada archivo dentro de la carpeta `Workflows/` puede importarse directamente en 
 - Andrés Felipe Jiménez Ramírez
 - Andrés Rueda
 - Thomas
+
+
+## Update: Examen [Número] — Sistema de Puntos por Cumplimiento
+
+### Descripción
+
+Se implementó un sistema de puntos para incentivar la asistencia puntual de los estudiantes a sus tutorías. Cada vez que una tutoría es marcada como **"Finalizada"**, el estudiante recibe **10 puntos** acumulables en su perfil.
+
+### Lógica implementada
+
+* Se detecta cuando una tutoría cambia al estado **"Finalizada"**.
+* Se utiliza una expresión matemática en un nodo **Set / Edit Fields** para asignar **10 puntos por cada sesión completada**.
+* Se busca al estudiante mediante su **`telegram_user`** en la hoja de usuarios.
+* Se obtiene el balance actual de puntos del estudiante.
+* Se suman los nuevos puntos al balance existente.
+* Se actualiza el perfil del estudiante en **Google Sheets** con el nuevo total.
+* Se agregó la opción **"4. Ver mis Puntos"** al menú principal del bot.
+* Al seleccionar esta opción, el sistema consulta los puntos acumulados del estudiante y genera una respuesta personalizada.
+
+### Respuesta del Bot
+
+El estudiante recibe un mensaje con el siguiente formato:
+
+> Hola [Nombre], actualmente tienes 🏆 [Puntos] puntos acumulados por tu constancia académica. ¡Sigue asistiendo a tus tutorías!
+
+### Resultado esperado
+
+El sistema permite llevar un registro automático de los puntos obtenidos por cada tutoría finalizada y consultar el balance acumulado directamente desde Telegram.
+
+### Entregables
+
+* **Workflow actualizado:** archivo `.json`.
+* **README.md:** documentación de la lógica implementada.
+* **Capturas de pantalla:**
+
+  * Nodos nuevos implementados en el canvas de n8n.
+  * Prueba exitosa de la consulta de puntos en Telegram.
+  * Evidencia de la actualización del balance en Google Sheets.
