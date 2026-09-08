@@ -1,0 +1,1483 @@
+{
+  "name": "Workflow 4 - Cancelar Tutoria",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "telegram_user"
+            },
+            {
+              "name": "chat_id"
+            },
+            {
+              "name": "pantalla_actual"
+            },
+            {
+              "name": "paso_actual"
+            },
+            {
+              "name": "datos_parciales"
+            },
+            {
+              "name": "row_number"
+            },
+            {
+              "name": "mensaje_usuario"
+            }
+          ]
+        }
+      },
+      "id": "4a5ec4a3-85f6-461a-b824-e5eea47f3da6",
+      "name": "Trigger Cancelar Tutoria",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2208,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parseo defensivo de datos_parciales (misma logica que Workflow 3, adaptada al fix de row_number)\nconst item = $input.item.json;\nlet datos = {};\ntry {\n  datos = item.datos_parciales ? JSON.parse(item.datos_parciales) : {};\n} catch (e) {\n  datos = {};\n}\nreturn {\n  json: {\n    ...item,\n    paso_actual: Number(item.paso_actual) || 0,\n    row_number: Number(item.row_number),\n    datos\n  }\n};"
+      },
+      "id": "b12b5714-a529-40e4-a5b0-517d5b424457",
+      "name": "Parsear Datos Parciales",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.paso_actual}}",
+                    "rightValue": 0,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.paso_actual}}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.paso_actual}}",
+                    "rightValue": 2,
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "af2229d6-a8bb-4351-ae89-32a530a678cb",
+      "name": "Segun Paso Cancelacion",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -1760,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORIAS"
+        },
+        "options": {}
+      },
+      "id": "844e4ac2-700e-435b-95a5-8bc0d4848c48",
+      "name": "Leer Tutorias",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -784,
+        16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const idEstudiante = $('Buscar Estudiante').item.json.id_estudiante;\nconst activas = ['Solicitada', 'Asignada', 'Confirmada'];\nconst dias = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];\nconst lista = $input.all()\n  .filter(i => String(i.json.id_estudiante) === String(idEstudiante) && activas.includes(i.json.estado))\n  .map(i => {\n    const fecha = new Date(i.json.fecha + 'T00:00:00');\n    return {\n      row_number_tutoria: i.json.row_number,\n      id_tutoria: i.json.id_tutoria,\n      materia: i.json.materia,\n      id_tutor: i.json.id_tutor,\n      fecha: i.json.fecha,\n      hora: i.json.hora,\n      dia_semana: dias[fecha.getDay()],\n      estado: i.json.estado\n    };\n  });\nreturn [{ json: { lista, hay_tutorias: lista.length > 0 } }];"
+      },
+      "id": "1b88b6bd-dcd2-47e9-8486-9988826a878c",
+      "name": "Filtrar Tutorias Cancelables",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.hay_tutorias}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "67ee83cb-1426-4071-b1b8-ee76c8cc74d1",
+      "name": "Hay Tutorias",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -352,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Parsear Datos Parciales').item.json.chat_id}}",
+        "text": "No tienes tutorías activas para cancelar.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "dddacc75-fedc-453e-b357-846615b8893e",
+      "name": "Mensaje Sin Tutorias",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -64,
+        176
+      ],
+      "webhookId": "4b934828-9452-4287-9f32-d99b8ad786af",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "SESSIONS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "value": {
+            "telegram_user": "={{$('Parsear Datos Parciales').item.json.telegram_user}}",
+            "pantalla_actual": "inicio",
+            "paso_actual": "0",
+            "datos_parciales": "{}"
+          },
+          "schema": [
+            {
+              "id": "telegram_user",
+              "displayName": "telegram_user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pantalla_actual",
+              "displayName": "pantalla_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paso_actual",
+              "displayName": "paso_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_parciales",
+              "displayName": "datos_parciales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "db550634-5424-49dc-bb4a-436e5be08c61",
+      "name": "Reset Sesion - Sin Tutorias",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        160,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $json.lista;\nlet texto = 'Estas son tus tutorías activas. Escribe el número de la que deseas cancelar:\\n\\n';\nitems.forEach((t, idx) => {\n  texto += `${idx + 1}. ${t.materia} - ${t.fecha} ${t.hora} (${t.estado})\\n`;\n});\nreturn { json: { texto_lista: texto, lista_tutorias: items } };"
+      },
+      "id": "e75d804b-8a0a-4500-97a7-f2390ec4fc16",
+      "name": "Construir Lista Tutorias",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Parsear Datos Parciales').item.json.chat_id}}",
+        "text": "={{$json.texto_lista}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "52632209-4ee2-4ba3-abf1-0183c701aaa1",
+      "name": "Mensaje Lista Tutorias",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        0
+      ],
+      "webhookId": "84466378-92c4-4a00-85c7-6c3a39c203e5",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "SESSIONS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "value": {
+            "telegram_user": "={{$('Parsear Datos Parciales').item.json.telegram_user}}",
+            "pantalla_actual": "cancelar",
+            "paso_actual": "1",
+            "datos_parciales": "={{JSON.stringify({lista: $('Construir Lista Tutorias').item.json.lista_tutorias})}}"
+          },
+          "schema": [
+            {
+              "id": "telegram_user",
+              "displayName": "telegram_user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pantalla_actual",
+              "displayName": "pantalla_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paso_actual",
+              "displayName": "paso_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_parciales",
+              "displayName": "datos_parciales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3751d357-3c1e-48df-8f48-2fb7a1690709",
+      "name": "Guardar Sesion - Esperando Seleccion",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        656,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Valida que mensaje_usuario sea un numero dentro del rango de la lista guardada\nconst datos = $('Parsear Datos Parciales').item.json.datos;\nconst lista = datos.lista || [];\nconst raw = ($('Parsear Datos Parciales').item.json.mensaje_usuario || '').trim();\nconst idx = parseInt(raw, 10) - 1;\nconst valido = Number.isInteger(idx) && idx >= 0 && idx < lista.length;\nreturn { json: { valido, seleccion: valido ? lista[idx] : null } };"
+      },
+      "id": "e214b31d-4d45-40c0-a40e-639513fe9d6f",
+      "name": "Validar Seleccion Tutoria",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1536,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.valido}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "27d04369-f73f-4b5d-8367-dee6719b4276",
+      "name": "Seleccion Valida",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1264,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Parsear Datos Parciales').item.json.chat_id}}",
+        "text": "Ese número no corresponde a ninguna tutoría de la lista. Intenta de nuevo.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c6fa5252-108a-42fa-a699-3b712e3c9526",
+      "name": "Mensaje Seleccion Invalida",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1040,
+        720
+      ],
+      "webhookId": "3a781a45-b0ec-42e3-97e8-64ebb6b881cd",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const t = $json.seleccion;\nconst texto = `¿Confirmas cancelar la tutoría de ${t.materia} el ${t.fecha} a las ${t.hora}? Responde Sí o No.`;\nreturn { json: { texto_confirmacion: texto, tutoria_seleccionada: t } };"
+      },
+      "id": "36d49a0e-685c-4db5-8fbf-0196ae5fefeb",
+      "name": "Preparar Confirmacion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Parsear Datos Parciales').item.json.chat_id}}",
+        "text": "={{$json.texto_confirmacion}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "d558d60f-7522-467a-90e7-c09f1a34ac84",
+      "name": "Mensaje Confirmar Cancelacion",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -816,
+        480
+      ],
+      "webhookId": "d702174f-44a9-49b8-94fc-ba4dac264126",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "SESSIONS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "value": {
+            "telegram_user": "={{$('Parsear Datos Parciales').item.json.telegram_user}}",
+            "pantalla_actual": "cancelar",
+            "paso_actual": "2",
+            "datos_parciales": "={{JSON.stringify({tutoria_seleccionada: $('Preparar Confirmacion').item.json.tutoria_seleccionada})}}"
+          },
+          "schema": [
+            {
+              "id": "telegram_user",
+              "displayName": "telegram_user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pantalla_actual",
+              "displayName": "pantalla_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paso_actual",
+              "displayName": "paso_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_parciales",
+              "displayName": "datos_parciales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "94b42180-a48e-49aa-bbbe-301e1fea7d15",
+      "name": "Guardar Sesion - Esperando Confirmacion",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -592,
+        480
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = ($('Parsear Datos Parciales').item.json.mensaje_usuario || '').trim().toLowerCase();\nlet resultado = 'invalido';\nif (['si', 'sí', 's', 'yes'].includes(raw)) resultado = 'si';\nelse if (['no', 'n'].includes(raw)) resultado = 'no';\nreturn { json: { resultado, tutoria_seleccionada: $('Parsear Datos Parciales').item.json.datos.tutoria_seleccionada } };"
+      },
+      "id": "5b78ac08-cb5b-4cec-a517-5c5d986f6d32",
+      "name": "Interpretar Confirmacion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1600,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.resultado}}",
+                    "rightValue": "si",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.resultado}}",
+                    "rightValue": "no",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.resultado}}",
+                    "rightValue": "invalido",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                }
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "276b167f-2177-43e3-ad79-67d9c8bd28c1",
+      "name": "Segun Confirmacion",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -1392,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Parsear Datos Parciales').item.json.chat_id}}",
+        "text": "Entendido, tu tutoría no fue cancelada y sigue activa.",
+        "additionalFields": {}
+      },
+      "id": "3819ab97-9fc7-4aa1-862a-8c62e3f4e164",
+      "name": "Mensaje Cancelacion Abortada",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        1136
+      ],
+      "webhookId": "6cb4aa9d-fb72-46cf-8011-fb9b55a8dfde",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "SESSIONS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "value": {
+            "telegram_user": "={{$('Parsear Datos Parciales').item.json.telegram_user}}",
+            "pantalla_actual": "inicio",
+            "paso_actual": "0",
+            "datos_parciales": "{}"
+          },
+          "schema": [
+            {
+              "id": "telegram_user",
+              "displayName": "telegram_user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pantalla_actual",
+              "displayName": "pantalla_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paso_actual",
+              "displayName": "paso_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_parciales",
+              "displayName": "datos_parciales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b9d42ed4-1a3e-494d-a7c3-d8b79b391d2e",
+      "name": "Reset Sesion - Abortada",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -720,
+        1136
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Parsear Datos Parciales').item.json.chat_id}}",
+        "text": "No entendí tu respuesta. Responde Sí o No.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "4ed71429-2094-41dd-bd8d-cbd8b6fbdce1",
+      "name": "Mensaje Confirmacion Invalida",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        1328
+      ],
+      "webhookId": "8561ecf4-12d4-483e-86e8-730dc9992bcf",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORIAS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_tutoria"
+          ],
+          "value": {
+            "id_tutoria": "={{$json.tutoria_seleccionada.id_tutoria}}",
+            "estado": "Cancelada"
+          },
+          "schema": [
+            {
+              "id": "id_tutoria",
+              "displayName": "id_tutoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1963d696-45f2-41be-8b74-0590b58eaa32",
+      "name": "Actualizar Tutoria Cancelada",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1168,
+        912
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek",
+          "mode": "id"
+        },
+        "sheetName": {
+          "value": "DISPONIBILIDAD",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_tutor",
+            "dia_semana",
+            "hora_inicio"
+          ],
+          "value": {
+            "id_tutor": "={{$('Interpretar Confirmacion').item.json.tutoria_seleccionada.id_tutor}}",
+            "dia_semana": "={{$('Interpretar Confirmacion').item.json.tutoria_seleccionada.dia_semana}}",
+            "hora_inicio": "={{$('Interpretar Confirmacion').item.json.tutoria_seleccionada.hora}}",
+            "estado": "Libre"
+          },
+          "schema": [
+            {
+              "id": "id_tutor",
+              "displayName": "id_tutor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dia_semana",
+              "displayName": "dia_semana",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hora_inicio",
+              "displayName": "hora_inicio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1accc1ac-683e-4306-b682-93ffd56e0793",
+      "name": "Liberar Franja Disponibilidad",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -944,
+        912
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.telegram_user}}",
+        "text": "={{'Se ha cancelado la tutoria de ' + $('Actualizar Tutoria Cancelada').item.json.materia + ' del ' + $('Actualizar Tutoria Cancelada').item.json.fecha + ' a las ' + $('Actualizar Tutoria Cancelada').item.json.hora + '.'}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e1d77cc1-289d-4239-9e37-dc65924d37ee",
+      "name": "Notificar Tutor",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -512,
+        912
+      ],
+      "webhookId": "1f83548d-50a2-4a79-9845-203b9f469530",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Parsear Datos Parciales').item.json.chat_id}}",
+        "text": "Tu tutoría fue cancelada correctamente.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "485132d9-3b58-409e-a575-57dc2d8abaa7",
+      "name": "Mensaje Cancelacion Confirmada",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -128,
+        912
+      ],
+      "webhookId": "b9d32504-dbcf-41fc-81d4-33d8c8b449da",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "SESSIONS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "telegram_user"
+          ],
+          "value": {
+            "telegram_user": "={{$('Parsear Datos Parciales').item.json.telegram_user}}",
+            "pantalla_actual": "inicio",
+            "paso_actual": "0",
+            "datos_parciales": "{}"
+          },
+          "schema": [
+            {
+              "id": "telegram_user",
+              "displayName": "telegram_user",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pantalla_actual",
+              "displayName": "pantalla_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "paso_actual",
+              "displayName": "paso_actual",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "datos_parciales",
+              "displayName": "datos_parciales",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "8cf77273-faeb-401e-9f07-fc66be00eb3a",
+      "name": "Reset Sesion - Confirmada",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        64,
+        912
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORES"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "id_tutor",
+              "lookupValue": "={{$('Interpretar Confirmacion').item.json.tutoria_seleccionada.id_tutor}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ada8a970-4ec0-43ca-ade0-cf5e3f250ecc",
+      "name": "Buscar Tutor Info",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -736,
+        912
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "ESTUDIANTES"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "telegram_user",
+              "lookupValue": "={{$('Parsear Datos Parciales').item.json.telegram_user}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "333ff69d-148f-43f5-b210-cecffa11ae45",
+      "name": "Buscar Estudiante",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1024,
+        16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger Cancelar Tutoria": {
+      "main": [
+        [
+          {
+            "node": "Parsear Datos Parciales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear Datos Parciales": {
+      "main": [
+        [
+          {
+            "node": "Segun Paso Cancelacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segun Paso Cancelacion": {
+      "main": [
+        [
+          {
+            "node": "Buscar Estudiante",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validar Seleccion Tutoria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Interpretar Confirmacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Filtrar Tutorias Cancelables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Tutorias Cancelables": {
+      "main": [
+        [
+          {
+            "node": "Hay Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Construir Lista Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje Sin Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Sin Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Reset Sesion - Sin Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Lista Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Mensaje Lista Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Lista Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Guardar Sesion - Esperando Seleccion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Seleccion Tutoria": {
+      "main": [
+        [
+          {
+            "node": "Seleccion Valida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seleccion Valida": {
+      "main": [
+        [
+          {
+            "node": "Preparar Confirmacion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje Seleccion Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Confirmacion": {
+      "main": [
+        [
+          {
+            "node": "Mensaje Confirmar Cancelacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Confirmar Cancelacion": {
+      "main": [
+        [
+          {
+            "node": "Guardar Sesion - Esperando Confirmacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Interpretar Confirmacion": {
+      "main": [
+        [
+          {
+            "node": "Segun Confirmacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segun Confirmacion": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Tutoria Cancelada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje Cancelacion Abortada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mensaje Confirmacion Invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Cancelacion Abortada": {
+      "main": [
+        [
+          {
+            "node": "Reset Sesion - Abortada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Tutoria Cancelada": {
+      "main": [
+        [
+          {
+            "node": "Liberar Franja Disponibilidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Liberar Franja Disponibilidad": {
+      "main": [
+        [
+          {
+            "node": "Buscar Tutor Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Tutor": {
+      "main": [
+        [
+          {
+            "node": "Mensaje Cancelacion Confirmada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensaje Cancelacion Confirmada": {
+      "main": [
+        [
+          {
+            "node": "Reset Sesion - Confirmada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Tutor Info": {
+      "main": [
+        [
+          {
+            "node": "Notificar Tutor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Estudiante": {
+      "main": [
+        [
+          {
+            "node": "Leer Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "886e447b-dee7-4640-9ec9-1d071adece34",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ef2a98c5ba6714b7afff743ffdfaba7364469ad41d9946d3505faafd696faf4"
+  },
+  "nodeGroups": [],
+  "id": "SPwOjpSuXky0CewT",
+  "tags": []
+}

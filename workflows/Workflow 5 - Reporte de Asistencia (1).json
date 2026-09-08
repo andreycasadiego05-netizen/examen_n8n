@@ -1,0 +1,182 @@
+{
+  "name": "Workflow 5 - Reporte de Asistencia",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "6720e6bb-d991-46b6-af15-5248e0835e12",
+      "name": "Cada Lunes 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORIAS"
+        },
+        "options": {}
+      },
+      "id": "4ddc2aac-799e-4956-8ce9-428b9ac897ad",
+      "name": "Leer Tutorias",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORES"
+        },
+        "options": {}
+      },
+      "id": "34e05ba5-14f8-408f-bf4e-2efc2627cdc8",
+      "name": "Leer Tutores",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tutorias = $('Leer Tutorias').all().map(i => i.json);\nconst tutores = $input.all().map(i => i.json);\nconst nombrePorId = {};\ntutores.forEach(t => { nombrePorId[t.id_tutor] = t.nombre; });\n\nconst total = tutorias.length;\nconst porEstado = {};\ntutorias.forEach(f => { porEstado[f.estado] = (porEstado[f.estado] || 0) + 1; });\n\nconst porMateria = {};\ntutorias.forEach(f => { porMateria[f.materia] = (porMateria[f.materia] || 0) + 1; });\n\nconst porTutor = {};\ntutorias.forEach(f => {\n  const nombre = nombrePorId[f.id_tutor] || f.id_tutor;\n  if (!porTutor[nombre]) porTutor[nombre] = {};\n  porTutor[nombre][f.estado] = (porTutor[nombre][f.estado] || 0) + 1;\n});\n\nconst filaEstado = Object.entries(porEstado).map(([k, v]) => `<li>${k}: ${v}</li>`).join('');\nconst filaMateria = Object.entries(porMateria).map(([k, v]) => `<li>${k}: ${v}</li>`).join('');\nconst filaTutor = Object.entries(porTutor).map(([nombre, estados]) => {\n  const detalle = Object.entries(estados).map(([e, c]) => `${e}: ${c}`).join(', ');\n  return `<li>${nombre} - ${detalle}</li>`;\n}).join('');\n\nconst hoy = new Date().toISOString().slice(0, 10);\n\nconst html = `\n<h2>Reporte semanal TutorBot - ${hoy}</h2>\n<p>Total de tutorias registradas hasta la fecha: <strong>${total}</strong></p>\n<h3>Por estado</h3>\n<ul>${filaEstado || '<li>Sin datos</li>'}</ul>\n<h3>Por materia</h3>\n<ul>${filaMateria || '<li>Sin datos</li>'}</ul>\n<h3>Por tutor</h3>\n<ul>${filaTutor || '<li>Sin datos</li>'}</ul>\n`;\n\nreturn [{ json: { html, total, fecha: hoy } }];"
+      },
+      "id": "607e75d4-f45b-4c9f-bac4-7340aec8b229",
+      "name": "Construir Reporte",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "mariocupcakes31@gmail.com",
+        "subject": "=Reporte semanal TutorBot - {{$json.fecha}}",
+        "message": "={{$json.html}}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "14ed790c-394a-4335-b112-9985112a31bd",
+      "name": "Enviar Reporte por Correo",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        0
+      ],
+      "webhookId": "21edfda8-c0c8-4d76-90ec-db7879c5b883",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8uclLNKghJGcRKzy",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cada Lunes 8am": {
+      "main": [
+        [
+          {
+            "node": "Leer Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Leer Tutores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Tutores": {
+      "main": [
+        [
+          {
+            "node": "Construir Reporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Reporte": {
+      "main": [
+        [
+          {
+            "node": "Enviar Reporte por Correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "19087fba-a688-4454-b048-8aa7b9c7daf9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ef2a98c5ba6714b7afff743ffdfaba7364469ad41d9946d3505faafd696faf4"
+  },
+  "nodeGroups": [],
+  "id": "Jn5ugdosGwCOoKJA",
+  "tags": []
+}

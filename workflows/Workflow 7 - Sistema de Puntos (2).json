@@ -1,0 +1,322 @@
+{
+  "name": "Workflow 7 - Sistema de Puntos",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "21bb5c04-e6ca-4f03-9e26-673898113951",
+      "name": "Cada 15 Minutos",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORIAS"
+        },
+        "options": {}
+      },
+      "id": "71736d35-165b-49a4-a2e4-dbecef31f4a3",
+      "name": "Leer Tutorias",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2096,
+        32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "ESTUDIANTES"
+        },
+        "options": {}
+      },
+      "id": "a12c545d-b0ab-456b-a43d-a678df5d7004",
+      "name": "Leer Estudiantes",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2320,
+        32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const PUNTOS_POR_SESION = 10;\n\nconst tutorias = $('Leer Tutorias').all().map(i => i.json);\nconst estudiantes = $input.all().map(i => i.json);\n\nconst estudiantePorId = {};\nestudiantes.forEach(e => { estudiantePorId[e.id_estudiante] = e; });\n\nconst resultados = [];\ntutorias.forEach(t => {\n  if ((t.estado || '').trim() !== 'Finalizada') return;\n\n  const estudiante = estudiantePorId[t.id_estudiante];\n  if (!estudiante) return;\n\n  const puntosActuales = Number(estudiante.puntos) || 0;\n  const puntosNuevos = puntosActuales + PUNTOS_POR_SESION;\n\n  resultados.push({\n    id_tutoria: t.id_tutoria,\n    id_estudiante: estudiante.id_estudiante,\n    telegram_user: estudiante.telegram_user,\n    nombre_estudiante: estudiante.nombre || '',\n    puntos_ganados: PUNTOS_POR_SESION,\n    puntos_nuevos: puntosNuevos\n  });\n});\n\nreturn resultados.map(r => ({ json: r }));"
+      },
+      "id": "eea4730f-a179-45fd-86dd-5b30dc68bdc5",
+      "name": "Calcular Puntos por Tutoria Finalizada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2544,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "ESTUDIANTES"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_estudiante"
+          ],
+          "value": {
+            "id_estudiante": "={{$json.id_estudiante}}",
+            "puntos": "={{$json.puntos_nuevos}}"
+          },
+          "schema": [
+            {
+              "id": "id_estudiante",
+              "displayName": "id_estudiante",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "puntos",
+              "displayName": "puntos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "52ec7228-1f0e-4ccd-8f95-a03649e860b5",
+      "name": "Actualizar Puntos Estudiante",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2768,
+        32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORIAS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_tutoria"
+          ],
+          "value": {
+            "id_tutoria": "={{$('Calcular Puntos por Tutoria Finalizada').item.json.id_tutoria}}",
+            "estado": "Puntos Otorgados"
+          },
+          "schema": [
+            {
+              "id": "id_tutoria",
+              "displayName": "id_tutoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "04265ff3-506d-4b9c-8759-b52522e85652",
+      "name": "Marcar Tutoria - Puntos Otorgados",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2992,
+        32
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Calcular Puntos por Tutoria Finalizada').item.json.telegram_user}}",
+        "text": "=Hola {{$('Calcular Puntos por Tutoria Finalizada').item.json.nombre_estudiante}}, actualmente tienes 🏆 {{$('Calcular Puntos por Tutoria Finalizada').item.json.puntos_nuevos}} puntos acumulados por tu constancia academica. ¡Sigue asistiendo a tus tutorias!",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "0baeb641-cb42-4ea7-84ae-c8b1f15ca21e",
+      "name": "Notificar Puntos al Estudiante",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3216,
+        32
+      ],
+      "webhookId": "8a9b0c1d-2e3f-4041-9a2b-3c4d5e6f7182",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cada 15 Minutos": {
+      "main": [
+        [
+          {
+            "node": "Leer Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Leer Estudiantes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Estudiantes": {
+      "main": [
+        [
+          {
+            "node": "Calcular Puntos por Tutoria Finalizada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Puntos por Tutoria Finalizada": {
+      "main": [
+        [
+          {
+            "node": "Actualizar Puntos Estudiante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar Puntos Estudiante": {
+      "main": [
+        [
+          {
+            "node": "Marcar Tutoria - Puntos Otorgados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Tutoria - Puntos Otorgados": {
+      "main": [
+        [
+          {
+            "node": "Notificar Puntos al Estudiante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "cfa0a434-1066-4489-9b26-672d57e56b6d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ef2a98c5ba6714b7afff743ffdfaba7364469ad41d9946d3505faafd696faf4"
+  },
+  "nodeGroups": [],
+  "id": "Acp3NAM6YZnWWoJJ",
+  "tags": []
+}

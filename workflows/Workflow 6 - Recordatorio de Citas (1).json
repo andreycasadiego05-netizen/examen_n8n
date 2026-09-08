@@ -1,0 +1,360 @@
+{
+  "name": "Workflow 6 - Recordatorio de Citas",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORIAS"
+        },
+        "options": {}
+      },
+      "id": "ee90ef01-98e3-4d4a-9a8f-adf443912583",
+      "name": "Leer Tutorias",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "ESTUDIANTES"
+        },
+        "options": {}
+      },
+      "id": "f7d47b2b-89f8-4050-b790-7a02f3c74dbc",
+      "name": "Leer Estudiantes",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORES"
+        },
+        "options": {}
+      },
+      "id": "02b033cd-6c80-4958-8f0c-6df19ee3628c",
+      "name": "Leer Tutores",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const VENTANA_HORAS = 24;\n\nconst tutorias = $('Leer Tutorias').all().map(i => i.json);\nconst estudiantes = $('Leer Estudiantes').all().map(i => i.json);\nconst tutores = $input.all().map(i => i.json);\n\nconst estudiantePorId = {};\nestudiantes.forEach(e => { estudiantePorId[e.id_estudiante] = e; });\nconst tutorPorId = {};\ntutores.forEach(t => { tutorPorId[t.id_tutor] = t; });\n\nconst ahora = new Date();\nconst activos = ['Asignada', 'Confirmada'];\n\nconst recordatorios = [];\ntutorias.forEach(t => {\n  if (!activos.includes(t.estado)) return;\n  if ((t.recordatorio_enviado || '').trim().toLowerCase() === 'si') return;\n  if (!t.fecha || !t.hora) return;\n\n  const momentoTutoria = new Date(`${t.fecha}T${t.hora}:00`);\n  if (isNaN(momentoTutoria.getTime())) return;\n\n  const diffHoras = (momentoTutoria - ahora) / (1000 * 60 * 60);\n  if (diffHoras <= 0 || diffHoras > VENTANA_HORAS) return;\n\n  const estudiante = estudiantePorId[t.id_estudiante] || {};\n  const tutor = tutorPorId[t.id_tutor] || {};\n\n  recordatorios.push({\n    id_tutoria: t.id_tutoria,\n    materia: t.materia,\n    fecha: t.fecha,\n    hora: t.hora,\n    chat_id_estudiante: estudiante.telegram_user || '',\n    nombre_estudiante: estudiante.nombre || '',\n    correo_estudiante: estudiante.correo || '',\n    chat_id_tutor: tutor.telegram_user || '',\n    nombre_tutor: tutor.nombre || ''\n  });\n});\n\nreturn recordatorios.map(r => ({ json: r }));"
+      },
+      "id": "3fc4a25a-0395-4176-8685-d21010ca3c28",
+      "name": "Construir Recordatorios",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id_estudiante}}",
+        "text": "=Recordatorio: tienes una tutoria de {{$json.materia}} el {{$json.fecha}} a las {{$json.hora}}.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "43028b84-6016-4267-976f-ac67fc3645b8",
+      "name": "Recordar Estudiante (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        0
+      ],
+      "webhookId": "71d535c8-1104-4587-9fd0-a2042cfcd66a",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$('Construir Recordatorios').item.json.chat_id_tutor}}",
+        "text": "=Recordatorio: tienes una tutoria de {{$('Construir Recordatorios').item.json.materia}} con {{$('Construir Recordatorios').item.json.nombre_estudiante}} el {{$('Construir Recordatorios').item.json.fecha}} a las {{$('Construir Recordatorios').item.json.hora}}.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "22f31482-0710-4b91-a145-e26e1747a32d",
+      "name": "Recordar Tutor (Telegram)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1328,
+        0
+      ],
+      "webhookId": "f35fe379-9c2a-406a-b7fd-7146bb0fea8b",
+      "credentials": {
+        "telegramApi": {
+          "id": "TEF4kY6kLuXuQ68P",
+          "name": "Telegram account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$('Construir Recordatorios').item.json.correo_estudiante}}",
+        "subject": "=Recordatorio de tutoria - {{$('Construir Recordatorios').item.json.materia}}",
+        "message": "=<p>Hola {{$('Construir Recordatorios').item.json.nombre_estudiante}},</p><p>Este es un recordatorio de tu tutoria de <strong>{{$('Construir Recordatorios').item.json.materia}}</strong> con {{$('Construir Recordatorios').item.json.nombre_tutor}} el {{$('Construir Recordatorios').item.json.fecha}} a las {{$('Construir Recordatorios').item.json.hora}}.</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "465374d2-e899-4cd4-b50c-0da691410deb",
+      "name": "Recordar Estudiante (Correo)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1552,
+        0
+      ],
+      "webhookId": "05ee1892-fe69-42d3-8abb-f95bc258286d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8uclLNKghJGcRKzy",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1tqZ7v554xgO0G0LUbOZ9ciNjXSj-K6WGXydWN9hmHek"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "TUTORIAS"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "id_tutoria"
+          ],
+          "value": {
+            "id_tutoria": "={{$('Construir Recordatorios').item.json.id_tutoria}}",
+            "recordatorio_enviado": "Si"
+          },
+          "schema": [
+            {
+              "id": "id_tutoria",
+              "displayName": "id_tutoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recordatorio_enviado",
+              "displayName": "recordatorio_enviado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a5b5eeb5-2386-4069-b961-f22c02eb8b19",
+      "name": "Marcar Recordatorio Enviado",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "d3q7PkCoLSAZ9qUC",
+          "name": "Google Sheets account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "7f5d3c0a-9d7c-4d8b-b8a9-d0af69a84d7c",
+      "name": "Cada 6 Horas",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Leer Tutorias": {
+      "main": [
+        [
+          {
+            "node": "Leer Estudiantes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Estudiantes": {
+      "main": [
+        [
+          {
+            "node": "Leer Tutores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Tutores": {
+      "main": [
+        [
+          {
+            "node": "Construir Recordatorios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir Recordatorios": {
+      "main": [
+        [
+          {
+            "node": "Recordar Estudiante (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recordar Estudiante (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Recordar Tutor (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recordar Tutor (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Recordar Estudiante (Correo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recordar Estudiante (Correo)": {
+      "main": [
+        [
+          {
+            "node": "Marcar Recordatorio Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cada 6 Horas": {
+      "main": [
+        [
+          {
+            "node": "Leer Tutorias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "91c681f7-6970-41cf-b428-444c7aa65caf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ef2a98c5ba6714b7afff743ffdfaba7364469ad41d9946d3505faafd696faf4"
+  },
+  "nodeGroups": [],
+  "id": "7iaNLR3fhGRGmTm8",
+  "tags": []
+}
