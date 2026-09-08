@@ -112,39 +112,58 @@ Cada archivo dentro de la carpeta `Workflows/` puede importarse directamente en 
 - Thomas
 
 
-## Update: Examen [Número] — Sistema de Puntos por Cumplimiento
+## Update: Examen Puntos — Sistema de Puntos por Cumplimiento
 
 ### Descripción
 
-Se implementó un sistema de puntos para incentivar la asistencia puntual de los estudiantes a sus tutorías. Cada vez que una tutoría es marcada como **"Finalizada"**, el estudiante recibe **10 puntos** acumulables en su perfil.
+Se implementó un sistema automático de puntos para incentivar la asistencia de los estudiantes a sus tutorías. El workflow revisa periódicamente las tutorías y, cuando encuentra una tutoría con estado **"Finalizada"**, asigna puntos al estudiante correspondiente.
 
-### Lógica implementada
+### Funcionamiento
 
-* Se detecta cuando una tutoría cambia al estado **"Finalizada"**.
-* Se utiliza una expresión matemática en un nodo **Set / Edit Fields** para asignar **10 puntos por cada sesión completada**.
-* Se busca al estudiante mediante su **`telegram_user`** en la hoja de usuarios.
-* Se obtiene el balance actual de puntos del estudiante.
-* Se suman los nuevos puntos al balance existente.
-* Se actualiza el perfil del estudiante en **Google Sheets** con el nuevo total.
-* Se agregó la opción **"4. Ver mis Puntos"** al menú principal del bot.
-* Al seleccionar esta opción, el sistema consulta los puntos acumulados del estudiante y genera una respuesta personalizada.
+El proceso se ejecuta automáticamente **cada 15 minutos** mediante un nodo `Schedule Trigger`.
 
-### Respuesta del Bot
+El workflow realiza las siguientes acciones:
 
-El estudiante recibe un mensaje con el siguiente formato:
+1. **Leer tutorías:** obtiene la información registrada en la hoja `TUTORIAS` de Google Sheets.
+2. **Leer estudiantes:** obtiene los estudiantes registrados en la hoja `ESTUDIANTES`.
+3. **Calcular puntos:** el nodo `Calcular Puntos por Tutoria Finalizada` revisa las tutorías y solamente procesa aquellas cuyo estado sea **"Finalizada"**.
+4. **Asignación de puntos:** cada tutoría finalizada otorga **10 puntos** al estudiante.
+5. **Relación con el estudiante:** la tutoría se relaciona con el estudiante mediante su `id_estudiante`. Se obtiene su balance actual de puntos y se calcula el nuevo total.
+6. **Actualizar estudiante:** el nuevo balance de puntos se guarda en la hoja `ESTUDIANTES`, utilizando `id_estudiante` como criterio de coincidencia.
+7. **Evitar duplicación:** después de otorgar los puntos, la tutoría cambia su estado de **"Finalizada"** a **"Puntos Otorgados"**, evitando que vuelva a procesarse en las siguientes ejecuciones.
+8. **Notificación:** finalmente, el estudiante recibe un mensaje por Telegram informándole la cantidad de puntos acumulados. Para enviar el mensaje se utiliza su `telegram_user`.
 
-> Hola [Nombre], actualmente tienes 🏆 [Puntos] puntos acumulados por tu constancia académica. ¡Sigue asistiendo a tus tutorías!
+### Flujo de nodos
+
+El workflow está conectado de la siguiente manera:
+
+`Cada 15 Minutos`
+→ `Leer Tutorias`
+→ `Leer Estudiantes`
+→ `Calcular Puntos por Tutoria Finalizada`
+→ `Actualizar Puntos Estudiante`
+→ `Marcar Tutoria - Puntos Otorgados`
+→ `Notificar Puntos al Estudiante`
+
+### Mensaje enviado al estudiante
+
+Cuando una tutoría es procesada correctamente, el bot envía un mensaje personalizado con el nombre del estudiante y su nuevo balance:
+
+> Hola [Nombre], actualmente tienes 🏆 [Puntos] puntos acumulados por tu constancia academica. ¡Sigue asistiendo a tus tutorias!
+
+El mensaje utiliza el `telegram_user` registrado del estudiante como destinatario y muestra los puntos acumulados después de la actualización.
 
 ### Resultado esperado
 
-El sistema permite llevar un registro automático de los puntos obtenidos por cada tutoría finalizada y consultar el balance acumulado directamente desde Telegram.
+El sistema automatiza el reconocimiento de la asistencia a tutorías. Cada tutoría que pasa por el estado **"Finalizada"** genera 10 puntos, actualiza el balance del estudiante en Google Sheets, marca la tutoría como **"Puntos Otorgados"** y notifica al estudiante mediante Telegram.
 
 ### Entregables
 
-* **Workflow actualizado:** archivo `.json`.
+* **Workflow actualizado:** `Workflow 7 - Sistema de Puntos.json`.
 * **README.md:** documentación de la lógica implementada.
 * **Capturas de pantalla:**
 
-  * Nodos nuevos implementados en el canvas de n8n.
-  * Prueba exitosa de la consulta de puntos en Telegram.
-  * Evidencia de la actualización del balance en Google Sheets.
+  * Nodos del sistema de puntos en el canvas de n8n.
+  * Ejecución exitosa del workflow.
+  * Mensaje recibido por el estudiante en Telegram.
+  * Evidencia de la actualización de puntos en Google Sheets.
